@@ -63,7 +63,7 @@ const isButtonLoading = ref(false)
 
     <div v-if="currentStep === 1">
       <div class="margin-top-bottom-1">
-        <CodeLine :code="`bash <(${getOriginStr()}/api/admin/incus/install.sh)`" />
+        <CodeLine :code="`bash <(curl -sL ${getOriginStr()}/api/admin/incus/install.sh)`" />
       </div>
 
       <n-flex align="center" justify="space-between">
@@ -79,7 +79,7 @@ const isButtonLoading = ref(false)
 
     <div v-if="currentStep === 2">
       <div class="margin-top-bottom-1">
-        <CodeLine :code="`bash <(${getOriginStr()}/api/admin/incus/auth.sh)`" />
+        <CodeLine :code="`bash <(curl -sL ${getOriginStr()}/api/admin/incus/auth.sh)`" />
       </div>
 
       <n-flex align="center" justify="space-between">
