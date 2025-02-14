@@ -17,7 +17,8 @@ from fastapi.responses import FileResponse
 from log import logging
 from database import init_db, create_database_pool, DB_POOL
 from cert import init_cert, get_cached_cert_str
-
+from incus import Incus
+import data_model
 
 logger = logging.getLogger(__name__)
 
@@ -45,10 +46,17 @@ app = FastAPI(lifespan=lifespan)
 app.max_request_size = 10 * 1024  # 设置请求体最大为 10KB 防止被大文件攻击
 
 # 获取前端 dist 目录的绝对路径
-frontend_dist_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../frontend/dist'))
+frontend_dist_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "../frontend/dist")
+)
 
 # 挂载静态文件目录，这样可以处理前端静态资源的请求
-app.mount("/assets", StaticFiles(directory=os.path.join(frontend_dist_path, 'assets')), name="assets")
+app.mount(
+    "/assets",
+    StaticFiles(directory=os.path.join(frontend_dist_path, "assets")),
+    name="assets",
+)
+
 
 def generate_error_response(code: str, message: str) -> Response:
     """
@@ -56,10 +64,25 @@ def generate_error_response(code: str, message: str) -> Response:
     """
     return JSONResponse({"error": message}, status_code=code)
 
+
 @app.get("/")
 async def read_index():
-    index_path = os.path.join(frontend_dist_path, 'index.html')
+    index_path = os.path.join(frontend_dist_path, "index.html")
     return FileResponse(index_path)
+
+
+@app.post("/api/admin/node")
+async def post_admin_node(node: data_model.apiPostNode) -> Response:
+    """
+    创建一个节点。
+    """
+    incus = Incus(node.host, node.port)
+    resp = incus.get_env_conf()
+    if resp.status_code == 200:
+        return JSONResponse(resp.json())
+    else:
+        return Response(status_code=resp.status_code)
+
 
 @app.get("/api/admin/incus/cert.crt")
 async def get_admin_incus_cert() -> Response:
@@ -77,22 +100,19 @@ async def get_admin_incus_install_script() -> Response:
     返回一个安装 Incus 的脚本。
     """
     # 读取安装脚本模板并把主机域名渲染进去
-    with open('config/script/install-incus.sh',"rt",encoding="utf-8") as text_file:
+    with open("config/script/install-incus.sh", "rt", encoding="utf-8") as text_file:
         return Response(content=text_file.read(), media_type="text/plain")
 
 
 @app.get("/api/admin/incus/auth.sh")
-async def get_admin_incus_auth_script(host:str = Header(...)) -> Response:
+async def get_admin_incus_auth_script(host: str = Header(...)) -> Response:
     """
     返回一个安装 Incus 的认证脚本。
     """
     # 读取安装脚本模板并把主机域名渲染进去
-    with open('config/script/auth-incus.sh',"rt",encoding="utf-8") as text_file:
-        return Response(content=text_file.read().format(host=f"https://{host}"), media_type="text/plain")
+    with open("config/script/auth-incus.sh", "rt", encoding="utf-8") as text_file:
+        return Response(
+            content=text_file.read().format(host=f"https://{host}"),
+            media_type="text/plain",
+        )
 
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="127.0.0.1", port=8002, access_log=True)

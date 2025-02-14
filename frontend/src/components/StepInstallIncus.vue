@@ -1,10 +1,8 @@
 <script setup lang="ts">
 
-import type { MenuOption } from 'naive-ui'
-import type { Component } from 'vue'
 
-import { h, ref, watch } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { ref } from 'vue'
+
 import { NSteps, NStep, NButton, NFlex, NIcon, NInput, useMessage } from 'naive-ui'
 import CodeLine from './CodeLine.vue'
 
@@ -12,6 +10,9 @@ import {
   QuestionCircle20Regular,
 } from '@vicons/fluent'
 
+import { addNodeToCache } from '@/utils'
+
+const emits = defineEmits(['close'])
 
 const messager = useMessage()
 const currentStep = ref(1)
@@ -37,11 +38,7 @@ const validateIP = () => {
   // 验证 IPv6 地址
   const ipv6Regex = /^(?=.*[a-zA-Z0-9])(?=.*:)[a-zA-Z0-9:]+$/;
 
-  if (ipv4Regex.test(ip)) {
-    messager.success('发现一个格式正确的IPV4地址')
-    isIpOk.value = true
-  }else if (ipv6Regex.test(ip)){
-    messager.success('发现一个格式正确的IPV6地址')
+  if (ipv4Regex.test(ip) || ipv6Regex.test(ip)) {
     isIpOk.value = true
   } else {
     messager.error('请输入有效的 IPv4 或 IPv6 地址');
@@ -49,6 +46,42 @@ const validateIP = () => {
 };
 
 const isButtonLoading = ref(false)
+
+const addNode = async () => {
+  isButtonLoading.value = true
+  const resp = await fetch('/api/admin/node', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      host: ipValue.value,
+      port: 8443
+    })
+  })
+
+
+  if (resp.ok) {
+    const json = await resp.json()
+
+    if (json.metadata.auth === "trusted") {
+      messager.success('添加成功')
+      // 把当前节点保存到缓存中
+      addNodeToCache(json)
+      // 回调 emit 关闭此模态框
+      emits('close')
+      return
+    } else {
+      messager.error(`添加失败 ${resp.status}`)
+    }
+
+  } else {
+    messager.error(`无法通讯，确保前序步骤已完成`)
+  }
+
+  isButtonLoading.value = false
+
+}
 
 </script>
 
@@ -96,12 +129,11 @@ const isButtonLoading = ref(false)
 
     <div v-if="currentStep === 3">
       <n-flex class="margin-top-bottom-1" align="center" justify="space-between">
-        <n-input v-model:value="ipValue" placeholder="请输入 IP 地址" @blur="validateIP" @keydown.enter="validateIP"/>
+        <n-input v-model:value="ipValue" placeholder="请输入 IP 地址" @blur="validateIP" @keydown.enter="validateIP" />
       </n-flex>
       <n-flex align="center" justify="space-between">
-        <span>输入刚才添加的服务器的IP地址</span>
-        <n-button secondary type="success" @click="isButtonLoading = !isButtonLoading"
-          :loading="isButtonLoading" :disabled="!isIpOk">连接</n-button>
+        <span>输入服务器的IP地址进行连接</span>
+        <n-button secondary type="success" @click="addNode" :loading="isButtonLoading" :disabled="!isIpOk">连接</n-button>
       </n-flex>
     </div>
 
