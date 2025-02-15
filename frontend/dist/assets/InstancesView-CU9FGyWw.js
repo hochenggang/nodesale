@@ -1,0 +1,1 @@
+import{Y as e,J as a,P as s,K as n,L as r,C as o}from"./index-FFu7zjC7.js";const l={__name:"InstancesView",setup(u){return(_,t)=>(o(),e(n(r),null,{default:a(()=>t[0]||(t[0]=[s("添加实例")])),_:1}))}};export{l as default};

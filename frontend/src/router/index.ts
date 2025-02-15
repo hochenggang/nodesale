@@ -13,6 +13,12 @@ const router = createRouter({
       path: '/nodes',
       name: 'nodes',
       component: () => import('../views/NodesView.vue'),
+      children: [
+        {
+          path: ':id',
+          component: () => import('../views/NodeView.vue'),
+        },
+      ],
     },
     {
       path: '/instances',

@@ -1,9 +1,7 @@
 <template>
   <n-button @click="handleAddNodeClick">添加节点</n-button>
-  <div class="node-items" v-if="nodes.length > 0" v-for="node in nodes"
-    :key="node.metadata.environment.certificate_fingerprint">
-    <div class="node-item">
-
+  <div class="node-items" v-if="nodes.length > 0">
+    <div class="node-item" v-for="node in nodes" :key="node.metadata.environment.certificate_fingerprint">
       <n-card hoverable>
         <div class="flex between">
           <div class="flex">
@@ -13,14 +11,13 @@
             <n-text>{{ node.metadata.environment.server_name }} - {{ node.metadata.environment.server }} {{
               node.metadata.environment.server_version }}</n-text>
           </div>
-          <n-button secondary round type="success" @click="handleNodeClick(node)">
+          <n-button size="small" secondary round type="success" @click="handleNodeClick(node)">
             <n-icon size="24">
               <ArrowCircleRight20Regular />
             </n-icon>
           </n-button>
         </div>
       </n-card>
-
     </div>
   </div>
 </template>
@@ -41,6 +38,7 @@ import {
 } from '@vicons/fluent'
 
 import type { apiGet1dot0 } from '@/types'
+import router from '@/router'
 
 
 const modal = useModal()
@@ -76,6 +74,7 @@ const handleAddNodeClick = () => {
 
 const handleNodeClick = (node: apiGet1dot0) => {
   messager.info(`展开 ${node.metadata.environment.server_name}`)
+  router.push(`/nodes/${node.metadata.environment.server_name}`)
 }
 
 </script>
@@ -99,6 +98,7 @@ const handleNodeClick = (node: apiGet1dot0) => {
 }
 
 .node-item {
-  max-width: 20rem;
+  width: 20rem;
+  margin-right: 0.5rem;
 }
 </style>
